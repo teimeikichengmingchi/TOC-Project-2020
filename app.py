@@ -22,7 +22,7 @@ machine = TocMachine(
                     "spending",
                             "setGoal", 
                                     "storeGoal",
-                            "recordSpending",
+                            "setSpendingMenu",
                                     "setSpending", "storeSpending",
                     "tree", ],
     transitions=[
@@ -57,12 +57,12 @@ machine = TocMachine(
                     {
                         "trigger": "advance",
                         "source": "spending",
-                        "dest": "recordSpending",
-                        "conditions": "is_going_to_recordSpending",
+                        "dest": "setSpendingMenu",
+                        "conditions": "is_going_to_setSpendingMenu",
                     },
                                 {
                                     "trigger": "advance",
-                                    "source": "recordSpending",
+                                    "source": "setSpendingMenu",
                                     "dest": "setSpending",
                                     "conditions": "is_going_to_setSpending",
                                 },
@@ -75,8 +75,8 @@ machine = TocMachine(
                                                         {
                                                             "trigger": "advance",
                                                             "source": "storeSpending",
-                                                            "dest": "spending",
-                                                            "conditions": "is_going_to_spending",
+                                                            "dest": "setSpending",
+                                                            "conditions": "is_going_to_setSpending",
                                                         },
                                                         {
                                                             "trigger": "advance",

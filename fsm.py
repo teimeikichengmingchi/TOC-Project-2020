@@ -19,13 +19,7 @@ class TocMachine(GraphMachine):
 
     def is_going_to_spending(self, event):
         text = event.message.text
-        print("\n\n想到「記帳選單」|\n")
-        try :
-            postback = event.postback.data
-        except AttributeError:
-            postback = ""
-        print(f"postback = {postback}\n\n")
-        return text.lower() == "進入記帳介面" or postback == "no"
+        return text.lower() == "go to spending"
 
     def is_going_to_setGoal(self, event):
         text = event.message.text
@@ -39,18 +33,18 @@ class TocMachine(GraphMachine):
             return False
         return True
 
-    def is_going_to_recordSpending(self, event):
+    def is_going_to_setSpendingMenu(self, event):
         text = event.message.text
         return text.lower() == "record spending"
 
     def is_going_to_setSpending(self, event):
         text = event.message.text
-        globals.setToday = False
-        if text.lower() == "set today":
-            globals.setToday = True
-        else:
-            globals.setToday = False
-        return text.lower() == "set today" or text.lower() == "set other days"
+        if not globals.setTodayFlag:
+            if text.lower() == "set today":
+                globals.setToday = True
+            else:
+                globals.setToday = False
+        return text.lower() == "set today" or text.lower() == "set other days" or text.lower() == "back to set spending"
 
     def is_going_to_storeSpending(self, event):
         data = (event.message.text).split(" ")
@@ -75,19 +69,19 @@ class TocMachine(GraphMachine):
 
     def is_going_to_tree(self, event):
         text = event.message.text
-        return text.lower() == "進入植物介面"
+        return text.lower() == "go to tree"
 
     def on_enter_menu(self, event):
         print("I'm entering menu")
         labels = ["植物介面", "記帳介面"]
-        texts = ["進入植物介面", "進入記帳介面"]
+        texts = ["go to tree", "go to spending"]
         img = "https://as2.ftcdn.net/jpg/03/24/86/31/500_F_324863161_fdTcdogpUbv7gJvpngFxKD89f50NZtD4.jpg"
 
         reply_token = event.reply_token
         send_button_message(reply_token, img, "主選單", "請選擇你想使用的功能", labels, texts)
 
     def on_enter_spending(self, event):
-        print("I'm entering 記帳")
+        globals.setTodayFlag = False
         labels = ["設定今月花費上限", "記帳", "主選單"]
         texts = ["set goal", "record spending", "回到主選單"]
         img = "https://as2.ftcdn.net/jpg/02/70/93/41/500_F_270934199_os6kuoM8GUAUnqgT3BzvLY4ZueAgrDGW.jpg"
@@ -126,9 +120,9 @@ class TocMachine(GraphMachine):
         )
         send_multi_mess(reply_token, message)
 
-    def on_enter_recordSpending(self, event):
+    def on_enter_setSpendingMenu(self, event):
         labels = ["今日記帳", "紀錄其他日期", "回到記帳選單"]
-        texts = ["set today", "set other days", "進入記帳介面"]
+        texts = ["set today", "set other days", "go to spending"]
         img = "https://as1.ftcdn.net/jpg/02/00/52/34/500_F_200523424_HzY3FumKGTn10RdqjbUNBuJ6QbwFKVFS.jpg"
 
         reply_token = event.reply_token
@@ -137,17 +131,13 @@ class TocMachine(GraphMachine):
     def on_enter_setSpending(self, event):
 
         reply_token = event.reply_token
-        try :
-            postback = event.postback.data
-        except AttributeError:
-            postback = ""
         if globals.setToday:
-            if postback == "yes":
+            if event.message.text == "back to set spending":
                 send_text_message(reply_token, f"請輸入下一筆計帳資料\n\n格示範例：\n娛樂 200")
             else :
                 send_text_message(reply_token, f"請輸入您今日({globals.year}/{globals.month}/{globals.day})的花費金額，前為項目分類，後為花費，中間請空一格並一次輸入一行就好\n\n格示範例：\n娛樂 200\n\n代表要在「娛樂」這個項目紀錄200元的花費")
         else:
-            if postback == "yes":
+            if pevent.message.text == "back to set spending":
                 send_text_message(reply_token, "請輸入下一筆計帳資料\n\n格示範例：\n2020 6 28 娛樂 200")
             else :
                 send_text_message(reply_token, "請輸入您欲紀錄的日期、項目及花費金額，前為年、月、日，中間為項目分類，後為花費。中間請空一格並一次輸入一行就好\n\n格示範例：\n2020 6 28 娛樂 200\n\n代表要在2020年6月28日的「娛樂」這個項目紀錄200元的花費")
@@ -171,6 +161,9 @@ class TocMachine(GraphMachine):
         labels = []
         labels.append("繼續")
         labels.append("結束")
+        texts = []
+        texts.append("back to set spending)
+        texts.append("go to spending")
         send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[0][len(globals.spending[0]) - 1]}年{globals.spending[1][len(globals.spending[0]) - 1]}月{globals.spending[2][len(globals.spending[0]) - 1]}日的{globals.spending[3][len(globals.spending[0]) - 1]}支出為{globals.spending[4][len(globals.spending[0]) - 1]}元，請問是否要繼續記錄？按是以繼續，按否回到記帳選單。", labels)
 
 

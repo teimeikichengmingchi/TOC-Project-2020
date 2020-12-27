@@ -20,21 +20,21 @@ def send_multi_mess(reply_token, mess):
 
     return "OK"
 
-def send_yes_no_message(reply_token, title, uptext, labels):
+def send_yes_no_message(reply_token, title, uptext, labels, texts):
     line_bot_api = LineBotApi(channel_access_token)
 
     acts = []
     acts.append(
         PostbackTemplateAction(
             label=labels[0],
-            text=None,
+            text=texts[0],
             data="yes"
         )
     )
     acts.append(
         PostbackTemplateAction(
             label=labels[1],
-            text=None,
+            text=texts[1],
             data="no"
         )
     )
