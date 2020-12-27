@@ -12,7 +12,7 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 from fsm import TocMachine
-from utils import send_text_message
+from utils import send_text_message, send_image
 
 load_dotenv()
 
@@ -24,6 +24,8 @@ machine = TocMachine(
                                     "storeGoal",
                             "setSpendingMenu",
                                     "setSpending", "storeSpending",
+                            "checkSpendingMenu",
+                                    "checkSpending",
                     "tree", ],
     transitions=[
         {
@@ -84,6 +86,23 @@ machine = TocMachine(
                                                             "dest": "spending",
                                                             "conditions": "is_going_to_spending",
                                                         },
+                    {
+                        "trigger": "advance",
+                        "source": "spending",
+                        "dest": "checkSpendingMenu",
+                        "conditions": "is_going_to_checkSpendingMenu",
+                    },
+                                {
+                                    "trigger": "advance",
+                                    "source": "checkSpendingMenu",
+                                    "dest": "checkSpending",
+                                    "conditions": "is_going_to_checkSpending",
+                                },
+                                            {
+                                                "trigger": "advance",
+                                                "source": "checkSpending",
+                                                "dest": "spending",
+                                            },
         {
             "trigger": "advance",
             "source": "menu",
@@ -155,13 +174,13 @@ def webhook_handler():
         #if not isinstance(event.message.text, str):
         #    continue
         print(f"\nFSM STATE: {machine.state}")
-        print(f"REQUEST BODY: \n{body}")
+        #print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
         
         #print("\n\ngoal = " + str(goal) + "\n\n")
         #if(machine.state == "storeGoal"):
         #    goal = int(event.message.text)
-        print(f"\n\ngoal = {globals.goal}\nsetToday = {globals.setToday}\n\n")
+        #print(f"\n\ngoal = {globals.goal}\nrecord = {globals.spending}\n\n")
         if response == False:
             if event.message.text == "fsm":
                 send_image(event.reply_token, "https://spendingforest.herokuapp.com/show-fsm")

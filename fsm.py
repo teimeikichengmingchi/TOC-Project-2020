@@ -68,6 +68,14 @@ class TocMachine(GraphMachine):
                 return False
         return True
 
+    def is_going_to_checkSpendingMenu(self, event):
+        text = event.message.text
+        return text.lower() == "go to check spending menu"
+
+    def is_going_to_checkSpending(self, event):
+        text = event.message.text
+        return text.lower() == "year" or text.lower() == "month" or text.lower() == "day"
+
     def is_going_to_tree(self, event):
         text = event.message.text
         return text.lower() == "go to tree"
@@ -83,8 +91,8 @@ class TocMachine(GraphMachine):
 
     def on_enter_spending(self, event):
         globals.setTodayFlag = False
-        labels = ["設定今月花費上限", "記帳", "主選單"]
-        texts = ["set goal", "record spending", "回到主選單"]
+        labels = ["設定今月花費上限", "記帳", "查看記帳", "主選單"]
+        texts = ["set goal", "record spending", "go to check spending menu", "回到主選單"]
         img = "https://as2.ftcdn.net/jpg/02/70/93/41/500_F_270934199_os6kuoM8GUAUnqgT3BzvLY4ZueAgrDGW.jpg"
 
         reply_token = event.reply_token
@@ -148,25 +156,179 @@ class TocMachine(GraphMachine):
         reply_token = event.reply_token
         data = (event.message.text).split(" ")
         if globals.setToday:
-            globals.spending[0].append(globals.year)
-            globals.spending[1].append(globals.month)
-            globals.spending[2].append(globals.day)
-            globals.spending[3].append(data[0])
-            globals.spending[4].append(data[1])
+            globals.spending.append([globals.year, globals.month, globals.day, data[0], int(data[1])])
         else:
-            globals.spending[0].append(data[0])
-            globals.spending[1].append(data[1])
-            globals.spending[2].append(data[2])
-            globals.spending[3].append(data[3])
-            globals.spending[4].append(data[4])
+            globals.spending.append([int(data[0]), int(data[1]), int(data[2]), data[3], int(data[4])])
         labels = []
         labels.append("繼續")
         labels.append("結束")
         texts = []
         texts.append("back to set spending")
         texts.append("go to spending")
-        send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[0][len(globals.spending[0]) - 1]}年{globals.spending[1][len(globals.spending[0]) - 1]}月{globals.spending[2][len(globals.spending[0]) - 1]}日的{globals.spending[3][len(globals.spending[0]) - 1]}支出為{globals.spending[4][len(globals.spending[0]) - 1]}元，請問是否要繼續記錄？按結束以回到記帳選單。", labels, texts)
+        send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[len(globals.spending) - 1][0]}年{globals.spending[len(globals.spending) - 1][1]}月{globals.spending[len(globals.spending) - 1][2]}日的{globals.spending[len(globals.spending) - 1][3]}支出為{globals.spending[len(globals.spending) - 1][4]}元，請問是否要繼續記錄？按結束以回到記帳選單。", labels, texts)
 
+    def on_enter_checkSpendingMenu(self, event):
+        globals.spending.sort(key = lambda l:l[3])
+        globals.spending.sort(key = lambda l:l[2])
+        globals.spending.sort(key = lambda l:l[1])
+        globals.spending.sort(key = lambda l:l[0])
+        bp = -1
+        print(f"len = {len(globals.spending)}")
+        for i in range(len(globals.spending)):
+            if not globals.spending[i][0] == globals.year:
+                typeDict = globals.pastYearSpending.get(globals.spending[i][0])#紀錄花費的類別的字典，內容如{"娛樂": 200, "食物" : 200}
+                if typeDict == None:
+                    globals.pastYearSpending.update({globals.spending[i][0] : {globals.spending[i][3] : globals.spending[i][4]}})
+                    continue
+                value = typeDict.get(globals.spending[i][3])
+                if value == None:
+                    typeDict.update({globals.spending[i][3] : globals.spending[i][4]})
+                    continue
+                typeDict.update({globals.spending[i][3] : value + globals.spending[i][4]})
+            else:
+                bp = i
+                break
+        if bp == -1:
+            bp = len(globals.spending)
+        for i in range(bp):
+            globals.spending.pop(0)
+        print(f"len = {len(globals.spending)}")
+        bp = -1
+        for i in range(len(globals.spending)):
+            if not globals.spending[i][1] == globals.month:
+                typeDict = globals.pastMonthSpending.get(globals.spending[i][1])#紀錄花費的類別的字典，內容如{"娛樂": 200, "食物" : 200}
+                if typeDict == None:
+                    globals.pastMonthSpending.update({globals.spending[i][1] : {globals.spending[i][3] : globals.spending[i][4]}})
+                    continue
+                value = typeDict.get(globals.spending[i][3])
+                if value == None:
+                    typeDict.update({globals.spending[i][3] : globals.spending[i][4]})
+                    continue
+                typeDict.update({globals.spending[i][3] : value + globals.spending[i][4]})
+            else:
+                bp = i
+                break
+        if bp == -1:
+            bp = len(globals.spending)
+        for i in range(bp):
+            globals.spending.pop(0)
+        print(f"\n\n\nglobals.spending = {globals.spending}\ntempRecordYearSpending = {globals.pastYearSpending}\ntempRecordMonthSpending = {globals.pastMonthSpending}\n\n\n")
+        record, t, d = 0, globals.spending[0][3], globals.spending[0][2]
+        for i, ele in enumerate(globals.spending):
+            if i == 0: continue
+            if ele[3] == t and ele[2] == d:
+                globals.spending[record][4] += ele[4]
+            else :
+                record += 1
+                d = ele[2]
+                t = ele[3]
+                globals.spending[record] = ele
+        for i in range(record + 1, len(globals.spending)):
+            globals.spending.pop(record + 1)
+        print(f"\n\n\nglobals.spending = {globals.spending}\ntempRecordYearSpending = {globals.pastYearSpending}\ntempRecordMonthSpending = {globals.pastMonthSpending}\n\n\n")
+
+        labels = []
+        labels.append("過去年度紀錄")
+        labels.append("今年月分紀錄")
+        labels.append("今月每日紀錄")
+        texts = []
+        texts.append("year")
+        texts.append("month")
+        texts.append("day")
+
+        reply_token = event.reply_token
+        send_button_message(reply_token, "https://as2.ftcdn.net/jpg/01/06/75/95/500_F_106759526_UoGu2eWG39GZayy4TgluEV9096L9dAqy.jpg", "帳款紀錄", "請選擇你想使用的功能", labels, texts)
+
+    def on_enter_checkSpending(self, event):
+        tempSum = 0
+        countGreaterThenNow = 0
+        countSmallerThenNow = 0
+        replyStr = ""
+        if event.message.text == "year":
+            if globals.pastYearSpending:
+                replyStr += "您過去各年度的花費如下：\n"
+                for y in globals.pastYearSpending.keys():
+                    replyStr += f"\n\n{y}年 ：\n"
+                    tempSum = 0
+                    for t in globals.pastYearSpending.get(y).keys():
+                        replyStr += f"\n{t}花費為{globals.pastYearSpending.get(y).get(t)}元"
+                        tempSum += globals.pastYearSpending.get(y).get(t)
+                    if globals.goal > 0:
+                        if (tempSum / 12) / globals.goal > 1.1:
+                            countGreaterThenNow += 1
+                        elif (tempSum / 12) / globals.goal < 0.9:
+                            countSmallerThenNow += 1
+                if globals.goal > 0:
+                    replyStr += f"\n\n其中共有{countGreaterThenNow}年的平均花費大於現在目標，有{countSmallerThenNow}年的平均花費小於現在目標。"
+                    if countGreaterThenNow > countSmallerThenNow:
+                        replyStr += "\n依過去數年的紀錄來看，現在目標訂得有挑戰性喔！請好好加油！"
+                    else:
+                        replyStr += "\n依過去數年的紀錄來看，可能可以自己斟酌要不要把記帳目標的難度再調高一點喔。"
+        elif event.message.text == "month":
+            if globals.pastMonthSpending:
+                replyStr += "您今年各月份的花費如下：\n"
+                for y in globals.pastMonthSpending.keys():
+                    print(f"{y}\n")
+                    replyStr += f"\n\n{y}月 ：\n"
+                    tempSum = 0
+                    print(globals.pastMonthSpending.get(y))
+                    for t in globals.pastMonthSpending.get(y).keys():
+                        replyStr += f"\n{t}花費為{globals.pastMonthSpending.get(y).get(t)}元"
+                        tempSum += globals.pastMonthSpending.get(y).get(t)
+                    if globals.goal > 0:
+                        if tempSum / globals.goal > 1.1:
+                            countGreaterThenNow += 1
+                        elif tempSum / globals.goal < 0.9:
+                            countSmallerThenNow += 1
+                if globals.goal > 0:
+                    replyStr += f"\n\n其中共有{countGreaterThenNow}個月的平均花費大於現在目標，有{countSmallerThenNow}個月的平均花費小於現在目標。"
+                    if countGreaterThenNow > countSmallerThenNow + 1:
+                        replyStr += "\n依過去數個月的紀錄來看，現在目標訂得有挑戰性喔！請好好加油！"
+                    elif countGreaterThenNow < countSmallerThenNow - 1:
+                        replyStr += "\n依過去數個月的紀錄來看，可能可以自己斟酌要不要把記帳目標的難度再調高一點喔。"
+                    else:
+                        replyStr += "\n依過去數個月的紀錄來看，目前的目標大約與過去持平。"
+        elif event.message.text == "day":
+            if globals.spending:
+                d = 0
+                countDay = 0
+                replyStr += "您本月的花費如下：\n"
+                for ele in globals.spending:
+                    print(ele)
+                    if not d == ele[2]:
+                        d = ele[2]
+                        countDay += 1
+                        replyStr += f"\n\n{ele[1]}月{ele[2]}號：\n"
+                    replyStr += f"\n{ele[3]}花費{ele[4]}元"
+                    tempSum += ele[4]
+                if globals.goal > 0:
+                    if (tempSum / countDay) / globals.goal > 1.1:
+                        replyStr += "\n依目前情況來看，這個月可能要節省一點才能達到目標喔。"
+                    elif (tempSum / countDay) / globals.goal < 0.9:
+                        replyStr += "\n依目前情況來看，這個月的目標離你很近了！"
+                    else:
+                        replyStr += "\n依目前情況來看，只要再節儉一點就一定能達到目標了喔！"
+        reply_token = event.reply_token
+        if replyStr == "":
+            replyStr = "沒有紀錄！！"
+        message = []
+        message.append(TextSendMessage(text=replyStr))
+        message.append(
+            TemplateSendMessage(
+                alt_text='Buttons template',
+                template=ButtonsTemplate(
+                    title="回到記帳選單",
+                    text="請點選按鈕以回到記帳選單",
+                    actions=[
+                        MessageTemplateAction(
+                            label="回到記帳選單",
+                            text="回選單"
+                        )
+                    ]
+                )
+            )
+        )
+        send_multi_mess(reply_token, message)
 
     def on_enter_tree(self, event):
         print("I'm entering 植物")
