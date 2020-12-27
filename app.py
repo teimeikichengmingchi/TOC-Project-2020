@@ -3,6 +3,8 @@ import sys
 
 import globals
 
+from datetime import datetime
+
 from flask import Flask, jsonify, request, abort, send_file
 from dotenv import load_dotenv
 from linebot import LineBotApi, WebhookParser
@@ -18,8 +20,10 @@ load_dotenv()
 machine = TocMachine(
     states=["init", "menu",
                     "spending",
-                            "setGoal", "storeGoal",
+                            "setGoal", 
+                                    "storeGoal",
                             "recordSpending",
+                                    "setSpending", "storeSpending",
                     "tree", ],
     transitions=[
         {
@@ -56,6 +60,24 @@ machine = TocMachine(
                         "dest": "recordSpending",
                         "conditions": "is_going_to_recordSpending",
                     },
+                                {
+                                    "trigger": "advance",
+                                    "source": "recordSpending",
+                                    "dest": "setSpending",
+                                    "conditions": "is_going_to_setSpending",
+                                },
+                                            {
+                                                "trigger": "advance",
+                                                "source": "setSpending",
+                                                "dest": "storeSpending",
+                                                "conditions": "is_going_to_storeSpending",
+                                            },
+                                                        {
+                                                            "trigger": "advance",
+                                                            "source": "storeSpending",
+                                                            "dest": "storeSpending",
+                                                            "conditions": "is_going_to_storeSpending",
+                                                        },
         {
             "trigger": "advance",
             "source": "menu",
@@ -113,6 +135,10 @@ def webhook_handler():
 
     # if event is MessageEvent and message is TextMessage, then echo text
     for event in events:
+        date = datetime.fromtimestamp(event.timestamp / 1000)
+        globals.day = date.day
+        globals.month = date.month
+        globals.year = date.year
         if event.type == "follow":
             machine.advance(event)
             continue
@@ -129,7 +155,7 @@ def webhook_handler():
         #print("\n\ngoal = " + str(goal) + "\n\n")
         #if(machine.state == "storeGoal"):
         #    goal = int(event.message.text)
-        print(f"\n\ngoal = {globals.goal}\n\n")
+        print(f"\n\ngoal = {globals.goal}\nsetToday = {globals.setToday}\n\n")
         if response == False:
             #if event.message.text == "返回主畫面":
             #    machine.go_back()

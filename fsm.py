@@ -1,7 +1,9 @@
 import globals
 from transitions.extensions import GraphMachine
 
-from utils import send_text_message, send_button_message, send_multi_mess
+from datetime import date
+
+from utils import send_text_message, send_button_message, send_multi_mess, send_yes_no_message
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, MessageTemplateAction, TemplateSendMessage, ButtonsTemplate
 
 
@@ -35,6 +37,36 @@ class TocMachine(GraphMachine):
         text = event.message.text
         return text.lower() == "record spending"
 
+    def is_going_to_setSpending(self, event):
+        text = event.message.text
+        globals.setToday = False
+        if text.lower() == "set today":
+            globals.setToday = True
+        else:
+            globals.setToday = False
+        return text.lower() == "set today" or text.lower() == "set other days"
+
+    def is_going_to_storeSpending(self, event):
+        data = (event.message.text).split(" ")
+        if (globals.setToday and not len(data) == 2) or (not globals.setToday and not len(data) == 5):
+            send_text_message(event.reply_token, "輸入的數目不正確，請確認輸入是否有錯")
+            return False
+        for i, ele in enumerate(data):
+            try :
+                int(ele)
+            except ValueError:
+                if (i == 0 and len(data) == 2) or  (i == 3 and len(data) == 5):
+                    continue
+                send_text_message(event.reply_token, "內容含有非正整數")
+                return False
+        if len(data) == 5:
+            try:
+                date(int(data[0], data[1], data[2]))
+            except ValueError:
+                send_text_message(event.reply_token, "您輸入的日期不存在")
+                return False
+        return True
+
     def is_going_to_tree(self, event):
         text = event.message.text
         return text.lower() == "進入植物介面"
@@ -50,8 +82,8 @@ class TocMachine(GraphMachine):
 
     def on_enter_spending(self, event):
         print("I'm entering 記帳")
-        labels = ["設定今月花費上限", "主選單"]
-        texts = ["set goal", "回到主選單"]
+        labels = ["設定今月花費上限", "記帳", "主選單"]
+        texts = ["set goal", "record spending", "回到主選單"]
         img = "https://as2.ftcdn.net/jpg/02/70/93/41/500_F_270934199_os6kuoM8GUAUnqgT3BzvLY4ZueAgrDGW.jpg"
 
         reply_token = event.reply_token
@@ -90,11 +122,40 @@ class TocMachine(GraphMachine):
 
     def on_enter_recordSpending(self, event):
         labels = ["今日記帳", "紀錄其他日期", "回到記帳選單"]
-        texts = ["set goal", "烏", "回到主選單"]
+        texts = ["set today", "set other days", "進入記帳介面"]
         img = "https://as1.ftcdn.net/jpg/02/00/52/34/500_F_200523424_HzY3FumKGTn10RdqjbUNBuJ6QbwFKVFS.jpg"
 
         reply_token = event.reply_token
         send_button_message(reply_token, img, "記帳", "請選擇你想紀錄今日還是紀錄其他天", labels, texts)
+
+    def on_enter_setSpending(self, event):
+
+        reply_token = event.reply_token
+        if globals.setToday:
+            send_text_message(reply_token, f"請輸入您今日({globals.year}/{globals.month}/{globals.day})的花費金額，前為項目分類，後為花費，中間請空一格並一次輸入一行就好\n\n格示範例：\n娛樂 200\n\n代表要在「娛樂」這個項目紀錄200元的花費")
+        else:
+            send_text_message(reply_token, "請輸入您欲紀錄的日期、項目及花費金額，前為年、月、日，中間為項目分類，後為花費。中間請空一格並一次輸入一行就好\n\n格示範例：\n2020 6 28 娛樂 200\n\n代表要在2020年6月28日的「娛樂」這個項目紀錄200元的花費")
+
+    def on_enter_storeSpending(self, event):
+
+        reply_token = event.reply_token
+        data = (event.message.text).split(" ")
+        if globals.setToday:
+            globals.spending[0].append(globals.year)
+            globals.spending[1].append(globals.month)
+            globals.spending[2].append(globals.day)
+            globals.spending[3].append(data[0])
+            globals.spending[4].append(data[1])
+        else:
+            globals.spending[0].append(data[0])
+            globals.spending[1].append(data[1])
+            globals.spending[2].append(data[2])
+            globals.spending[3].append(data[3])
+            globals.spending[4].append(data[4])
+        labels = []
+        labels.append("繼續")
+        labels.append("結束")
+        send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[0]}年{globals.spending[1]}月{globals.spending[2]}日的{globals.spending[3]}支出為{globals.spending[4]}元，請問是否要繼續記錄？", labels)
 
 
     def on_enter_tree(self, event):
