@@ -162,7 +162,7 @@ class TocMachine(GraphMachine):
         labels.append("繼續")
         labels.append("結束")
         texts = []
-        texts.append("back to set spending)
+        texts.append("back to set spending")
         texts.append("go to spending")
         send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[0][len(globals.spending[0]) - 1]}年{globals.spending[1][len(globals.spending[0]) - 1]}月{globals.spending[2][len(globals.spending[0]) - 1]}日的{globals.spending[3][len(globals.spending[0]) - 1]}支出為{globals.spending[4][len(globals.spending[0]) - 1]}元，請問是否要繼續記錄？按是以繼續，按否回到記帳選單。", labels)
 
