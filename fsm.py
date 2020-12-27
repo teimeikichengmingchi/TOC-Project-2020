@@ -1,7 +1,9 @@
 import globals
 from transitions.extensions import GraphMachine
 
-from datetime import date
+from datetime import date, datetime
+import random
+import math
 
 from utils import send_text_message, send_button_message, send_multi_mess, send_yes_no_message
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, MessageTemplateAction, TemplateSendMessage, ButtonsTemplate
@@ -80,8 +82,27 @@ class TocMachine(GraphMachine):
         text = event.message.text
         return text.lower() == "go to tree"
 
+    def is_going_to_treeIntro(self, event):
+        text = event.message.text
+        return text.lower() == "go to treeIntro"
+
+    def is_going_to_myCurrentTree(self, event):
+        text = event.message.text
+        return text.lower() == "go to my current tree" or text.lower() == "back to my tree"
+
+    def is_going_to_configInteractWithTree(self, event):
+        text = event.message.text
+        globals.treeAct = text.lower()
+        return text.lower() == "water" or text.lower() == "sing" or text.lower() == "fertilize"
+
+    def is_going_to_interactWithTree(self, event):
+        text = event.message.text
+        return text.lower() == "go to interact"
+
     def on_enter_menu(self, event):
         print("I'm entering menu")
+        if globals.decreaseTreeTime == "":
+            globals.decreaseTreeTime = event.timestamp
         labels = ["植物介面", "記帳介面"]
         texts = ["go to tree", "go to spending"]
         img = "https://as2.ftcdn.net/jpg/03/24/86/31/500_F_324863161_fdTcdogpUbv7gJvpngFxKD89f50NZtD4.jpg"
@@ -141,6 +162,10 @@ class TocMachine(GraphMachine):
 
         reply_token = event.reply_token
         if globals.setToday:
+            if not globals.getPointDate == str(globals.year)+str(globals.month)+str(globals.day):
+                globals.getPointDate = str(globals.year)+str(globals.month)+str(globals.day)
+                print(f"\n\n{globals.getPointDate}\n\n")
+                globals.point += 3
             if event.message.text == "back to set spending":
                 send_text_message(reply_token, f"請輸入下一筆計帳資料\n\n格示範例：\n娛樂 200")
             else :
@@ -332,9 +357,126 @@ class TocMachine(GraphMachine):
 
     def on_enter_tree(self, event):
         print("I'm entering 植物")
-        labels = ["主選單"]
-        texts = ["回到主選單"]
+        labels = ["查看目前植物狀態",  "主選單", ]#"查詢樹種",
+        texts = ["go to my current tree",  "回到主選單", ]#"go to treeIntro",
         img = "https://as1.ftcdn.net/jpg/01/67/72/04/500_F_167720496_af8JnHFQM7QMyIIz31tgp289ukGtlXKB.jpg"
 
         reply_token = event.reply_token
         send_button_message(reply_token, img, "植物界面", "請選擇你想使用的功能", labels, texts)
+
+    def on_enter_myCurrentTree(self, event):
+        img = "https://as1.ftcdn.net/jpg/00/83/50/24/500_F_83502495_xS01iodgg9kq01SjjQUApvWbc6Ty6gwu.jpg"
+        elaHour = math.floor((event.timestamp - globals.decreaseTreeTime) / 12)
+        # if elaHour > 0:
+        #     globals.water -= elaHour
+        #     globals.nutrient -= elaHour
+        #     globals.decreaseTreeTime = event.timestamp
+        message = []
+        # if globals.water <= 0 or globals.nutrient <= 0:
+        #     message.append(TextSendMessage(text=f"經過您這段時間的放置後，小樹成為了一顆枯樹了！真可憐！詳細介紹請至植物選單查看喔。\n同時您得到了一棵新的小樹，一切數值將歸零重新計算，不要再養死了喔。"))
+        #     globals.water = 10
+        #     globals.nutrient = 10
+        #     globals.happy = 0
+        # if globals.water > 30 and globals.nutrient > 30:
+        #     message.append(TextSendMessage(text=f"經過您這段時間的照顧後，小樹成為了一顆大樹了！詳細介紹請至植物選單查看喔。\n同時您得到了一棵新的小樹，一切數值將歸零重新計算。"))
+        #     globals.water = 10
+        #     globals.nutrient = 10
+        #     globals.happy = 0
+        replyStr = f"您目前的小樹水分值為{globals.water}，養分值為{globals.nutrient}，而您共有{globals.point}分可進行消費。\n請注意，水分值和養分值只要有一個歸零，小樹都有可能枯死喔。"
+        
+        message.append(TextSendMessage(text=replyStr))
+        message.append(
+            TemplateSendMessage(
+                alt_text='Buttons template',
+                template=ButtonsTemplate(
+                    title="您的小樹",
+                    text="請選擇行動",
+                    actions=[
+                        MessageTemplateAction(
+                            label="澆水",
+                            text="water"
+                        ),
+                        MessageTemplateAction(
+                            label="施肥",
+                            text="fertilize"
+                        ),
+                        MessageTemplateAction(
+                            label="唱歌",
+                            text="sing"
+                        ),
+                        MessageTemplateAction(
+                            label="回到植物頁面",
+                            text="go to tree"
+                        ),
+                    ]
+                )
+            )
+        )
+        reply_token = event.reply_token
+        send_multi_mess(reply_token, message)
+
+    def on_enter_configInteractWithTree(self, event):
+        replyStr = ""
+        if globals.treeAct == "water":
+            replyStr = f"您確定要花費{globals.treeActPoint[0]}點體力值來替小樹澆水嗎？"
+        elif globals.treeAct == "fertilize":
+            replyStr = f"您確定要花費{globals.treeActPoint[1]}點體力值來替小樹施肥嗎？"
+        elif globals.treeAct == "sing":
+            replyStr = f"您確定要花費{globals.treeActPoint[2]}點體力值來對小樹唱歌嗎？"
+
+        labels = []
+        labels.append("確定")
+        labels.append("取消")
+        texts = []
+        texts.append("go to interact")
+        texts.append("back to my tree")
+        reply_token = event.reply_token
+        send_yes_no_message(reply_token, "系統提示", replyStr, labels, texts)
+
+    def on_enter_interactWithTree(self, event):
+        replyStr = ""
+        if globals.treeAct == "water":
+            if globals.point >= 1:
+                globals.point -= 1
+                temp = random.randint(1, 3)
+                globals.water += temp
+                replyStr = f"你替小樹澆了水，水分值增加{temp}。\n小數現在水分值為{globals.water}"
+        elif globals.treeAct == "fertilize":
+            if globals.point >= 1:
+                globals.point -= 1
+                temp = random.randint(1, 3)
+                globals.nutrient += temp
+                replyStr = f"你替小樹施了肥，養分值增加{temp}。\n小數現在養分值為{globals.nutrient}"
+        elif globals.treeAct == "sing":
+            if globals.point >= 2:
+                globals.point -= 2
+                temp = random.randint(1, 3)
+                globals.happy += temp
+                replyStr = f"你對著小樹唱了歌！不知道小樹聽不聽得懂但總之你很快樂！"
+
+        if replyStr == "":
+            replyStr = f"錯誤！您剩餘的體力點為{globals.point}點，不足進行此行動。"
+        message = []
+        message.append(TextSendMessage(text=replyStr))
+        message.append(
+            TemplateSendMessage(
+                alt_text='Buttons template',
+                template=ButtonsTemplate(
+                    title="回到我的小樹",
+                    text="請點選按鈕以回到我的小樹",
+                    actions=[
+                        MessageTemplateAction(
+                            label="回到我的小樹",
+                            text="go back"
+                        )
+                    ]
+                )
+            )
+        )
+        reply_token = event.reply_token
+        send_multi_mess(reply_token, message)
+        
+    def on_enter_treeIntro(self, event):
+        replyStr = ""
+        reply_token = event.reply_token
+        send_text_message(reply_token, "目前已有的樹種：\n\n普通的樹：\n毫無反應就是一棵樹。\n中規中矩的種法可得。\n\n枯樹：\n曾經是樹，現在已經不是了，只是一堆木材，還不能拿來加工。放置太久會造成的結果\n\n請輸入任意鍵以離開")

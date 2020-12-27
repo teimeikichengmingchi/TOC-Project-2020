@@ -26,7 +26,10 @@ machine = TocMachine(
                                     "setSpending", "storeSpending",
                             "checkSpendingMenu",
                                     "checkSpending",
-                    "tree", ],
+                    "tree", 
+                            "myCurrentTree", "configInteractWithTree", "interactWithTree",
+                            "treeIntro",
+                    ],
     transitions=[
         {
             "trigger": "advance",
@@ -109,6 +112,52 @@ machine = TocMachine(
             "dest": "tree",
             "conditions": "is_going_to_tree",
         },
+                    {
+                        "trigger": "advance",
+                        "source": "tree",
+                        "dest": "myCurrentTree",
+                        "conditions": "is_going_to_myCurrentTree",
+                    },
+                                {
+                                    "trigger": "advance",
+                                    "source": "myCurrentTree",
+                                    "dest": "tree",
+                                    "conditions": "is_going_to_tree",
+                                },
+                                {
+                                    "trigger": "advance",
+                                    "source": "myCurrentTree",
+                                    "dest": "configInteractWithTree",
+                                    "conditions": "is_going_to_configInteractWithTree",
+                                },
+                                            {
+                                                "trigger": "advance",
+                                                "source": "configInteractWithTree",
+                                                "dest": "myCurrentTree",
+                                                "conditions": "is_going_to_myCurrentTree",
+                                            },
+                                            {
+                                                "trigger": "advance",
+                                                "source": "configInteractWithTree",
+                                                "dest": "interactWithTree",
+                                                "conditions": "is_going_to_interactWithTree",
+                                            },
+                                                        {
+                                                            "trigger": "advance",
+                                                            "source": "interactWithTree",
+                                                            "dest": "myCurrentTree",
+                                                        },
+                    {
+                        "trigger": "advance",
+                        "source": "tree",
+                        "dest": "treeIntro",
+                        "conditions": "is_going_to_treeIntro",
+                    },
+                                {
+                                    "trigger": "advance",
+                                    "source": "treeIntro",
+                                    "dest": "tree",
+                                },
         {
             "trigger": "advance",
             "source": "spending",
@@ -183,7 +232,7 @@ def webhook_handler():
         #print(f"\n\ngoal = {globals.goal}\nrecord = {globals.spending}\n\n")
         if response == False:
             if event.message.text == "fsm":
-                send_image(event.reply_token, "https://spendingforest.herokuapp.com/show-fsm")
+                send_image(event.reply_token, "https://i.imgur.com/B8VMEvQ.png")
             else:
                 send_text_message(event.reply_token, "未知的指令，請確認輸入是否正確")
 
