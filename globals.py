@@ -7,3 +7,4 @@ def initGlobals():
     setToday = False
     global spending
     spending = [[], [], [], [], []]
+    tempSpending = [0, 0, 0, 0, 0]
