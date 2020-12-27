@@ -135,6 +135,10 @@ class TocMachine(GraphMachine):
     def on_enter_setSpending(self, event):
 
         reply_token = event.reply_token
+        try :
+            postback = event.postback.data
+        except AttributeError:
+            postback = ""
         if globals.setToday:
             if event.postback.data == "yes":
                 send_text_message(reply_token, f"請輸入下一筆計帳資料\n\n格示範例：\n娛樂 200")
