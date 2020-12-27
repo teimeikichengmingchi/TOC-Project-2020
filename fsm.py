@@ -19,7 +19,8 @@ class TocMachine(GraphMachine):
 
     def is_going_to_spending(self, event):
         text = event.message.text
-        return text.lower() == "進入記帳介面"
+        postback = event.postback.data
+        return text.lower() == "進入記帳介面" or postback == "no"
 
     def is_going_to_setGoal(self, event):
         text = event.message.text
@@ -132,9 +133,15 @@ class TocMachine(GraphMachine):
 
         reply_token = event.reply_token
         if globals.setToday:
-            send_text_message(reply_token, f"請輸入您今日({globals.year}/{globals.month}/{globals.day})的花費金額，前為項目分類，後為花費，中間請空一格並一次輸入一行就好\n\n格示範例：\n娛樂 200\n\n代表要在「娛樂」這個項目紀錄200元的花費")
+            if event.postback.data == "yes":
+                send_text_message(reply_token, f"請輸入下一筆計帳資料\n\n格示範例：\n娛樂 200")
+            else :
+                send_text_message(reply_token, f"請輸入您今日({globals.year}/{globals.month}/{globals.day})的花費金額，前為項目分類，後為花費，中間請空一格並一次輸入一行就好\n\n格示範例：\n娛樂 200\n\n代表要在「娛樂」這個項目紀錄200元的花費")
         else:
-            send_text_message(reply_token, "請輸入您欲紀錄的日期、項目及花費金額，前為年、月、日，中間為項目分類，後為花費。中間請空一格並一次輸入一行就好\n\n格示範例：\n2020 6 28 娛樂 200\n\n代表要在2020年6月28日的「娛樂」這個項目紀錄200元的花費")
+            if event.postback.data == "yes":
+                send_text_message(reply_token, "請輸入下一筆計帳資料\n\n格示範例：\n2020 6 28 娛樂 200")
+            else :
+                send_text_message(reply_token, "請輸入您欲紀錄的日期、項目及花費金額，前為年、月、日，中間為項目分類，後為花費。中間請空一格並一次輸入一行就好\n\n格示範例：\n2020 6 28 娛樂 200\n\n代表要在2020年6月28日的「娛樂」這個項目紀錄200元的花費")
 
     def on_enter_storeSpending(self, event):
 
@@ -155,7 +162,7 @@ class TocMachine(GraphMachine):
         labels = []
         labels.append("繼續")
         labels.append("結束")
-        send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[0]}年{globals.spending[1]}月{globals.spending[2]}日的{globals.spending[3]}支出為{globals.spending[4]}元，請問是否要繼續記錄？", labels)
+        send_yes_no_message(reply_token, "記錄完成", f"系統已紀錄您在{globals.spending[0][len(globals.spending[0]) - 1]}年{globals.spending[1][len(globals.spending[0]) - 1]}月{globals.spending[2][len(globals.spending[0]) - 1]}日的{globals.spending[3][len(globals.spending[0]) - 1]}支出為{globals.spending[4][len(globals.spending[0]) - 1]}元，請問是否要繼續記錄？按是以繼續，按否回到記帳選單。", labels)
 
 
     def on_enter_tree(self, event):

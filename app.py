@@ -75,8 +75,14 @@ machine = TocMachine(
                                                         {
                                                             "trigger": "advance",
                                                             "source": "storeSpending",
-                                                            "dest": "storeSpending",
-                                                            "conditions": "is_going_to_storeSpending",
+                                                            "dest": "spending",
+                                                            "conditions": "is_going_to_spending",
+                                                        },
+                                                        {
+                                                            "trigger": "advance",
+                                                            "source": "storeSpending",
+                                                            "dest": "spending",
+                                                            "conditions": "is_going_to_spending",
                                                         },
         {
             "trigger": "advance",
@@ -146,8 +152,8 @@ def webhook_handler():
             continue
         if not isinstance(event.message, TextMessage):
             continue
-        if not isinstance(event.message.text, str):
-            continue
+        #if not isinstance(event.message.text, str):
+        #    continue
         print(f"\nFSM STATE: {machine.state}")
         print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
