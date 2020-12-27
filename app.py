@@ -166,7 +166,7 @@ def webhook_handler():
             if event.message.text == "fsm":
                 send_image(event.reply_token, "https://spendingforest.herokuapp.com/show-fsm")
             else:
-            send_text_message(event.reply_token, "未知的指令，請確認輸入是否正確")
+                send_text_message(event.reply_token, "未知的指令，請確認輸入是否正確")
 
     return "OK"
 
