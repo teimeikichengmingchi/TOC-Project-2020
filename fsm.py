@@ -19,7 +19,10 @@ class TocMachine(GraphMachine):
 
     def is_going_to_spending(self, event):
         text = event.message.text
-        postback = event.postback.data
+        try :
+            postback = event.postback.data
+        except AttributeError:
+            postback = ""
         return text.lower() == "進入記帳介面" or postback == "no"
 
     def is_going_to_setGoal(self, event):
