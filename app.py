@@ -163,9 +163,9 @@ def webhook_handler():
         #    goal = int(event.message.text)
         print(f"\n\ngoal = {globals.goal}\nsetToday = {globals.setToday}\n\n")
         if response == False:
-            #if event.message.text == "返回主畫面":
-            #    machine.go_back()
-            #else:
+            if event.message.text == "fsm":
+                send_image(event.reply_token, "https://spendingforest.herokuapp.com/show-fsm")
+            else:
             send_text_message(event.reply_token, "未知的指令，請確認輸入是否正確")
 
     return "OK"
