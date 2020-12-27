@@ -7,4 +7,5 @@ def initGlobals():
     setToday, setTodayFlag = False, False
     global spending
     spending = [[], [], [], [], []]
-    tempSpending = [0, 0, 0, 0, 0]
+    #global tempSpending
+    #tempSpending = [0, 0, 0, 0, 0]

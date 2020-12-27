@@ -62,7 +62,7 @@ class TocMachine(GraphMachine):
                 return False
         if len(data) == 5:
             try:
-                date(int(data[0], data[1], data[2]))
+                date(int(data[0]), int(data[1]), int(data[2]))
             except ValueError:
                 send_text_message(event.reply_token, "您輸入的日期不存在")
                 return False
