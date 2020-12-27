@@ -137,7 +137,7 @@ class TocMachine(GraphMachine):
             else :
                 send_text_message(reply_token, f"請輸入您今日({globals.year}/{globals.month}/{globals.day})的花費金額，前為項目分類，後為花費，中間請空一格並一次輸入一行就好\n\n格示範例：\n娛樂 200\n\n代表要在「娛樂」這個項目紀錄200元的花費")
         else:
-            if pevent.message.text == "back to set spending":
+            if event.message.text == "back to set spending":
                 send_text_message(reply_token, "請輸入下一筆計帳資料\n\n格示範例：\n2020 6 28 娛樂 200")
             else :
                 send_text_message(reply_token, "請輸入您欲紀錄的日期、項目及花費金額，前為年、月、日，中間為項目分類，後為花費。中間請空一格並一次輸入一行就好\n\n格示範例：\n2020 6 28 娛樂 200\n\n代表要在2020年6月28日的「娛樂」這個項目紀錄200元的花費")
